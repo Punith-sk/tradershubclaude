@@ -10,4 +10,5 @@ export const api = {
   placeBuy: (quantity) => fetch(BASE_URL + "/trades/buy", { method: "POST", headers: authHeaders(), body: JSON.stringify({ quantity }) }).then(r => r.json()),
   placeSell: (quantity) => fetch(BASE_URL + "/trades/sell", { method: "POST", headers: authHeaders(), body: JSON.stringify({ quantity }) }).then(r => r.json()),
   getTradeHistory: () => fetch(BASE_URL + "/trades", { headers: authHeaders() }).then(r => r.json()),
+  resetPortfolio: () => fetch(BASE_URL + "/portfolio/reset", { method: "POST", headers: authHeaders() }).then(r => r.json()),
 };

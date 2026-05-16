@@ -76,4 +76,25 @@ async function getTradeHistory(req, res) {
   }
 }
 
-module.exports = { placeBuy, placeSell, getPortfolio, getTradeHistory };
+async function resetPortfolio(req, res) {
+  try {
+    const userId = req.user.id;
+    await Trade.deleteMany({ userId });
+    await Portfolio.findOneAndUpdate({ userId }, {
+      cashBalance: 10000,
+      btcHolding: 0,
+      avgBuyPrice: 0,
+      totalBtcBought: 0,
+      totalCostPaid: 0,
+      realizedPnl: 0,
+      unrealizedPnl: 0,
+      totalPnl: 0,
+    });
+    return res.status(200).json({ status: "success", message: "Portfolio reset to $10,000" });
+  } catch (err) {
+    console.error("resetPortfolio error:", err);
+    return res.status(500).json({ status: "error", message: "Internal server error" });
+  }
+}
+
+module.exports = { placeBuy, placeSell, getPortfolio, getTradeHistory, resetPortfolio };
