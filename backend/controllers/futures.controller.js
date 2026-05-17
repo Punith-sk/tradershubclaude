@@ -1,9 +1,9 @@
-const { openPosition, closePosition, getOpenPosition, getPositionHistory } = require("../services/futuresEngine");
+const { openPosition, closePosition, getOpenPositions, getPositionHistory, SUPPORTED_SYMBOLS } = require("../services/futuresEngine");
 
 async function openFuturesPosition(req, res) {
   try {
     const userId = req.user.id;
-    const { direction, quantity } = req.body;
+    const { direction, quantity, symbol } = req.body;
 
     if (!direction || !["LONG", "SHORT"].includes(direction.toUpperCase())) {
       return res.status(400).json({ status: "error", message: "Direction must be LONG or SHORT" });
@@ -12,7 +12,8 @@ async function openFuturesPosition(req, res) {
       return res.status(400).json({ status: "error", message: "Invalid quantity" });
     }
 
-    const result = await openPosition(userId, direction.toUpperCase(), Number(quantity));
+    const sym = (symbol || "BTCUSDT").toUpperCase();
+    const result = await openPosition(userId, direction.toUpperCase(), Number(quantity), sym);
     if (!result.success) return res.status(400).json({ status: "error", message: result.message });
 
     return res.status(200).json({ status: "success", message: result.message, position: result.position });
@@ -41,13 +42,13 @@ async function closeFuturesPosition(req, res) {
   }
 }
 
-async function getFuturesPosition(req, res) {
+async function getFuturesPositions(req, res) {
   try {
     const userId = req.user.id;
-    const position = await getOpenPosition(userId);
-    return res.status(200).json({ status: "success", data: position });
+    const positions = await getOpenPositions(userId);
+    return res.status(200).json({ status: "success", data: positions });
   } catch (err) {
-    console.error("getFuturesPosition error:", err);
+    console.error("getFuturesPositions error:", err);
     return res.status(500).json({ status: "error", message: "Internal server error" });
   }
 }
@@ -63,4 +64,8 @@ async function getFuturesHistory(req, res) {
   }
 }
 
-module.exports = { openFuturesPosition, closeFuturesPosition, getFuturesPosition, getFuturesHistory };
+async function getSupportedSymbols(req, res) {
+  return res.status(200).json({ status: "success", data: SUPPORTED_SYMBOLS });
+}
+
+module.exports = { openFuturesPosition, closeFuturesPosition, getFuturesPositions, getFuturesHistory, getSupportedSymbols };

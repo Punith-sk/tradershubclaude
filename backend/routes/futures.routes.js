@@ -4,13 +4,15 @@ const auth = require("../middleware/auth.middleware");
 const {
   openFuturesPosition,
   closeFuturesPosition,
-  getFuturesPosition,
+  getFuturesPositions,
   getFuturesHistory,
+  getSupportedSymbols,
 } = require("../controllers/futures.controller");
 
 router.post("/futures/open", auth, openFuturesPosition);
 router.post("/futures/close", auth, closeFuturesPosition);
-router.get("/futures/position", auth, getFuturesPosition);
+router.get("/futures/positions", auth, getFuturesPositions);
 router.get("/futures/history", auth, getFuturesHistory);
+router.get("/futures/symbols", auth, getSupportedSymbols);
 
 module.exports = router;
