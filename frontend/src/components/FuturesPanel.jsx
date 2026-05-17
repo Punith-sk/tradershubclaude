@@ -236,36 +236,7 @@ export default function FuturesPanel({ currentPrice }) {
         </div>
       )}
 
-      {/* Position History */}
-      {history.length > 0 && (
-        <div style={{ background: "#1e293b", border: "1px solid #334155", borderRadius: "10px", padding: "1rem", overflowX: "auto" }}>
-          <h3 style={{ marginBottom: "0.75rem" }}>Futures History</h3>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8rem" }}>
-            <thead>
-              <tr>
-                {["Symbol", "Dir", "Qty", "Entry", "Exit", "PnL", "Date"].map(h => (
-                  <th key={h} style={{ textAlign: "left", padding: "0.4rem", borderBottom: "1px solid #334155", color: "#94a3b8" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {history.map((p) => (
-                <tr key={p._id}>
-                  <td style={{ padding: "0.4rem" }}>{p.symbol?.replace("USDT", "")}</td>
-                  <td style={{ padding: "0.4rem", color: p.direction === "LONG" ? "#22c55e" : "#ef4444" }}>{p.direction}</td>
-                  <td style={{ padding: "0.4rem" }}>{p.quantity}</td>
-                  <td style={{ padding: "0.4rem" }}>${p.entryPrice?.toFixed(2)}</td>
-                  <td style={{ padding: "0.4rem" }}>${p.closePrice?.toFixed(2)}</td>
-                  <td style={{ padding: "0.4rem", color: p.realizedPnl >= 0 ? "#22c55e" : "#ef4444", fontWeight: "bold" }}>
-                    {p.realizedPnl >= 0 ? "+" : ""}${p.realizedPnl?.toFixed(2)}
-                  </td>
-                  <td style={{ padding: "0.4rem", color: "#64748b" }}>{new Date(p.closedAt).toLocaleDateString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      
     </div>
   );
 }

@@ -1,0 +1,134 @@
+import { useEffect, useState } from "react";
+import { api } from "../services/api";
+
+export default function HistoryPanel() {
+  const [filter, setFilter] = useState("futures");
+  const [futuresHistory, setFuturesHistory] = useState([]);
+  const [spotHistory, setSpotHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      const [futuresRes, spotRes] = await Promise.all([
+        api.getFuturesHistory(),
+        api.getTradeHistory(),
+      ]);
+      if (futuresRes.status === "success") setFuturesHistory(futuresRes.data || []);
+      if (spotRes.status === "success") setSpotHistory(spotRes.data || []);
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  const FILTERS = [
+    { label: "Futures", value: "futures" },
+    { label: "Spot", value: "spot" },
+    { label: "Options", value: "options" },
+    { label: "All", value: "all" },
+  ];
+
+  function renderFuturesRow(p) {
+    return (
+      <tr key={p._id}>
+        <td style={{ padding: "0.5rem", color: "#94a3b8", fontSize: "0.75rem" }}>FUTURES</td>
+        <td style={{ padding: "0.5rem" }}>{p.symbol?.replace("USDT", "")}/USDT</td>
+        <td style={{ padding: "0.5rem", color: p.direction === "LONG" ? "#22c55e" : "#ef4444" }}>{p.direction}</td>
+        <td style={{ padding: "0.5rem" }}>{p.quantity}</td>
+        <td style={{ padding: "0.5rem" }}>${p.entryPrice?.toFixed(2)}</td>
+        <td style={{ padding: "0.5rem" }}>${p.closePrice?.toFixed(2)}</td>
+        <td style={{ padding: "0.5rem", color: p.realizedPnl >= 0 ? "#22c55e" : "#ef4444", fontWeight: "bold" }}>
+          {p.realizedPnl >= 0 ? "+" : ""}${p.realizedPnl?.toFixed(2)}
+        </td>
+        <td style={{ padding: "0.5rem", color: "#64748b", fontSize: "0.75rem" }}>
+          {new Date(p.closedAt).toLocaleDateString()}
+        </td>
+      </tr>
+    );
+  }
+
+  function renderSpotRow(t) {
+    return (
+      <tr key={t.tradeId}>
+        <td style={{ padding: "0.5rem", color: "#94a3b8", fontSize: "0.75rem" }}>SPOT</td>
+        <td style={{ padding: "0.5rem" }}>BTC/USDT</td>
+        <td style={{ padding: "0.5rem", color: t.action === "BUY" ? "#22c55e" : "#ef4444" }}>{t.action}</td>
+        <td style={{ padding: "0.5rem" }}>{t.quantity?.toFixed(6)}</td>
+        <td style={{ padding: "0.5rem" }}>${t.executionPrice?.toLocaleString()}</td>
+        <td style={{ padding: "0.5rem" }}>-</td>
+        <td style={{ padding: "0.5rem", color: t.realizedPnl >= 0 ? "#22c55e" : "#ef4444", fontWeight: "bold" }}>
+          {t.action === "SELL" ? (t.realizedPnl >= 0 ? "+" : "") + "$" + t.realizedPnl?.toFixed(2) : "-"}
+        </td>
+        <td style={{ padding: "0.5rem", color: "#64748b", fontSize: "0.75rem" }}>
+          {new Date(t.timestamp).toLocaleDateString()}
+        </td>
+      </tr>
+    );
+  }
+
+  let rows = [];
+  if (filter === "futures") rows = futuresHistory.map(renderFuturesRow);
+  else if (filter === "spot") rows = spotHistory.map(renderSpotRow);
+  else if (filter === "options") rows = []; // placeholder for Phase 3
+  else if (filter === "all") {
+    rows = [
+      ...futuresHistory.map(renderFuturesRow),
+      ...spotHistory.map(renderSpotRow),
+    ];
+  }
+
+  return (
+    <div style={{ background: "#1e293b", border: "1px solid #334155", borderRadius: "10px", padding: "1.25rem" }}>
+      {/* Header + Filter */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
+        <h3 style={{ margin: 0 }}>Trade History</h3>
+        <div style={{ display: "flex", gap: "0.3rem" }}>
+          {FILTERS.map(f => (
+            <button
+              key={f.value}
+              onClick={() => setFilter(f.value)}
+              style={{
+                background: filter === f.value ? "#f59e0b" : "#0f172a",
+                color: filter === f.value ? "#0f172a" : "#94a3b8",
+                border: "1px solid #334155",
+                padding: "0.25rem 0.75rem",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "0.8rem",
+                fontWeight: filter === f.value ? "bold" : "normal",
+              }}
+            >
+              {f.label}
+              {f.value === "options" && (
+                <span style={{ fontSize: "0.65rem", marginLeft: "0.3rem", color: "#64748b" }}>soon</span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loading ? (
+        <p style={{ color: "#64748b" }}>Loading...</p>
+      ) : rows.length === 0 ? (
+        <p style={{ color: "#64748b" }}>
+          {filter === "options" ? "Options trading coming soon." : "No trades yet."}
+        </p>
+      ) : (
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem" }}>
+            <thead>
+              <tr>
+                {["Type", "Symbol", "Direction", "Qty", "Entry", "Exit", "P&L", "Date"].map(h => (
+                  <th key={h} style={{ textAlign: "left", padding: "0.5rem", borderBottom: "1px solid #334155", color: "#64748b", fontWeight: "500" }}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>{rows}</tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -5,6 +5,8 @@ import { api } from "../services/api";
 import PriceChart from "./PriceChart";
 import FuturesPanel from "./FuturesPanel";
 import TradeHistory from "./TradeHistory";
+import HistoryPanel from "./HistoryPanel";
+
 
 export default function Dashboard() {
   const { portfolio, refresh } = usePortfolio();
@@ -84,10 +86,8 @@ export default function Dashboard() {
 
       <div className="panels">
         <FuturesPanel currentPrice={livePrice} />
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          <TradeHistory />
+        <HistoryPanel />
         </div>
       </div>
-    </div>
   );
 }
