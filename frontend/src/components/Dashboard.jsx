@@ -6,12 +6,13 @@ import PriceChart from "./PriceChart";
 import FuturesPanel from "./FuturesPanel";
 import TradeHistory from "./TradeHistory";
 import HistoryPanel from "./HistoryPanel";
-
+import ShareCard from "./ShareCard";
 
 export default function Dashboard() {
   const { portfolio, refresh } = usePortfolio();
   const [livePrice, setLivePrice] = useState(null);
   const [positions, setPositions] = useState([]);
+  const [showShareCard, setShowShareCard] = useState(false);
 
   async function handleReset() {
     if (!window.confirm("Reset portfolio to $10,000? All trades and positions will be deleted.")) return;
@@ -50,9 +51,35 @@ export default function Dashboard() {
     <div className="dashboard">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
         <h2>TradersHub</h2>
-        <button onClick={handleReset} style={{ background: "#ef4444", color: "white", border: "none", padding: "0.4rem 1rem", borderRadius: "6px", cursor: "pointer" }}>
-          Reset Portfolio
-        </button>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button
+            onClick={() => setShowShareCard(true)}
+            style={{
+              background: "#f59e0b",
+              color: "#0f172a",
+              border: "none",
+              padding: "0.4rem 1rem",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontWeight: "bold"
+            }}
+          >
+            📤 Share P&L
+          </button>
+          <button
+            onClick={handleReset}
+            style={{
+              background: "#ef4444",
+              color: "white",
+              border: "none",
+              padding: "0.4rem 1rem",
+              borderRadius: "6px",
+              cursor: "pointer"
+            }}
+          >
+            Reset Portfolio
+          </button>
+        </div>
       </div>
 
       <div className="stats-grid">
@@ -87,7 +114,9 @@ export default function Dashboard() {
       <div className="panels">
         <FuturesPanel currentPrice={livePrice} />
         <HistoryPanel />
-        </div>
       </div>
+
+      {showShareCard && <ShareCard onClose={() => setShowShareCard(false)} />}
+    </div>
   );
 }
