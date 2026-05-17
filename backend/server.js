@@ -14,6 +14,9 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api", tradeRoutes);
 app.use("/api", futuresRoutes);
+const leaderboardRoutes = require("./routes/leaderboard.routes");
+// and below the other app.use lines:
+app.use("/api", leaderboardRoutes);
 
 app.get("/", (req, res) => res.json({ status: "TradersHub API running" }));
 

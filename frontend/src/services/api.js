@@ -15,4 +15,5 @@ export const api = {
   getFuturesHistory: () => fetch(BASE_URL + "/futures/history", { headers: authHeaders() }).then(r => r.json()),
   openFuturesPosition: (direction, quantity, symbol) => fetch(BASE_URL + "/futures/open", { method: "POST", headers: authHeaders(), body: JSON.stringify({ direction, quantity, symbol }) }).then(r => r.json()),
   closeFuturesPosition: (positionId) => fetch(BASE_URL + "/futures/close", { method: "POST", headers: authHeaders(), body: JSON.stringify({ positionId }) }).then(r => r.json()),
+  getLeaderboard: () => fetch(BASE_URL + "/leaderboard", { headers: authHeaders() }).then(r => r.json()),
 };
