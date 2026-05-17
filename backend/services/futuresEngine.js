@@ -72,30 +72,41 @@ async function openPosition(userId, direction, quantity, symbol = "BTCUSDT") {
     return { success: false, message: `Insufficient balance. Need $${totalCost.toFixed(2)} (margin $${margin.toFixed(2)} + fee $${fee.toFixed(2)})` };
   }
 
-  const existing = await Position.findOne({ userId, symbol, status: "OPEN" });
-  if (existing) {
-    return { success: false, message: `You already have an open ${symbol} position. Close it first.` };
+  // Allow adding to existing position (averaging)
+const existing = await Position.findOne({ userId, symbol, status: "OPEN" });
+if (existing) {
+  if (existing.direction !== direction) {
+    return { success: false, message: `You have an open ${existing.direction} position on ${symbol}. Close it before opening opposite direction.` };
+  }
+  // Average into existing position
+  const totalQty = existing.quantity + quantity;
+  const newAvgEntry = ((existing.entryPrice * existing.quantity) + (entryPrice * quantity)) / totalQty;
+  const newNotional = totalQty * newAvgEntry;
+  const newMargin = newNotional / LEVERAGE;
+  const additionalMargin = newMargin - existing.margin;
+  const fee = notionalValue * TAKER_FEE;
+  const totalCost = additionalMargin + fee;
+
+  if (portfolio.cashBalance < totalCost) {
+    return { success: false, message: `Insufficient balance. Need $${totalCost.toFixed(2)}` };
   }
 
-  const liquidationPrice = calcLiquidationPrice(direction, entryPrice, LEVERAGE);
-
-  const position = new Position({
-    userId, symbol, direction,
-    entryPrice, quantity, leverage: LEVERAGE,
-    margin, notionalValue, liquidationPrice,
-    status: "OPEN",
-  });
-
-  await position.save();
+  existing.quantity = totalQty;
+  existing.entryPrice = newAvgEntry;
+  existing.notionalValue = newNotional;
+  existing.margin = newMargin;
+  existing.liquidationPrice = calcLiquidationPrice(direction, newAvgEntry, LEVERAGE);
+  await existing.save();
 
   portfolio.cashBalance -= totalCost;
   await portfolio.save();
 
   return {
     success: true,
-    message: `${direction} ${symbol} opened: ${quantity} @ $${entryPrice.toFixed(2)} | Margin: $${margin.toFixed(2)} | Liq: $${liquidationPrice.toFixed(2)}`,
-    position: position.toObject(),
+    message: `Added to ${direction} ${symbol}: avg entry $${newAvgEntry.toFixed(2)} | Total qty: ${totalQty} | Margin: $${newMargin.toFixed(2)}`,
+    position: existing.toObject(),
   };
+}
 }
 
 async function closePosition(userId, positionId) {
