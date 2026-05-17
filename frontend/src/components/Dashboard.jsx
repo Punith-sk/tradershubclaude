@@ -4,6 +4,7 @@ import { subscribeToBtcPrice } from "../services/priceService";
 import { api } from "../services/api";
 import TradingPanel from "./TradingPanel";
 import TradeHistory from "./TradeHistory";
+import PriceChart from "./PriceChart";
 
 export default function Dashboard() {
   const { portfolio, refresh } = usePortfolio();
@@ -52,6 +53,7 @@ export default function Dashboard() {
           <span>Realized P&L</span><strong>{portfolio.realizedPnl >= 0 ? "+" : ""}${portfolio.realizedPnl?.toFixed(2)}</strong>
         </div>
       </div>
+      <PriceChart />
       <div className="panels">
         <TradingPanel currentPrice={livePrice} />
         <TradeHistory />
