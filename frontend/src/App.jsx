@@ -5,6 +5,8 @@ import Dashboard from "./components/Dashboard";
 import Leaderboard from "./components/Leaderboard";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import OptionsChain from "./components/OptionsChain";
+
 
 function AppContent() {
   const { isLoggedIn, logout } = useAuth();
@@ -38,6 +40,20 @@ function AppContent() {
               Trading
             </button>
             <button
+              onClick={() => setActivePage("options")}
+              style={{
+                background: activePage === "options" ? "#f59e0b" : "transparent",
+                color: activePage === "options" ? "#0f172a" : "#94a3b8",
+                border: "1px solid #334155",
+                padding: "0.3rem 0.9rem",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontWeight: activePage === "options" ? "bold" : "normal",
+              }}
+            >
+              Options
+            </button>
+            <button
               onClick={() => setActivePage("leaderboard")}
               style={{
                 background: activePage === "leaderboard" ? "#f59e0b" : "transparent",
@@ -56,7 +72,7 @@ function AppContent() {
             </button>
           </div>
         </nav>
-        {activePage === "dashboard" ? <Dashboard /> : <Leaderboard />}
+        {activePage === "dashboard" ? <Dashboard /> : activePage === "leaderboard" ? <Leaderboard /> : <OptionsChain />}
       </div>
     </PortfolioProvider>
   );

@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 require("dotenv").config();
 
+
 const authRoutes = require("./routes/auth.routes");
 const tradeRoutes = require("./routes/trade.routes");
 const futuresRoutes = require("./routes/futures.routes");
@@ -10,6 +11,9 @@ const futuresRoutes = require("./routes/futures.routes");
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+const optionsRoutes = require("./routes/options.routes");
+app.use("/api", optionsRoutes);
 
 app.use("/api/auth", authRoutes);
 app.use("/api", tradeRoutes);

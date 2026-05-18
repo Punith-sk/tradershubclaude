@@ -5,18 +5,24 @@ export default function HistoryPanel() {
   const [filter, setFilter] = useState("futures");
   const [futuresHistory, setFuturesHistory] = useState([]);
   const [spotHistory, setSpotHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [optionsHistory, setOptionsHistory] = useState([]);
+  const [loading, setLoading] = useState(false); // ✅ FIX
 
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const [futuresRes, spotRes] = await Promise.all([
-        api.getFuturesHistory(),
-        api.getTradeHistory(),
-      ]);
-      if (futuresRes.status === "success") setFuturesHistory(futuresRes.data || []);
-      if (spotRes.status === "success") setSpotHistory(spotRes.data || []);
-      setLoading(false);
+      try {
+        const [futuresRes, spotRes, optionsRes] = await Promise.all([
+          api.getFuturesHistory(),
+          api.getTradeHistory(),
+          api.getOptionsHistory(),
+        ]);
+        if (futuresRes.status === "success") setFuturesHistory(futuresRes.data || []);
+        if (spotRes.status === "success") setSpotHistory(spotRes.data || []);
+        if (optionsRes.status === "success") setOptionsHistory(optionsRes.data || []);
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, []);
@@ -66,14 +72,36 @@ export default function HistoryPanel() {
     );
   }
 
+  function renderOptionsRow(o) {
+    return (
+      <tr key={o._id}>
+        <td style={{ padding: "0.5rem", color: "#94a3b8", fontSize: "0.75rem" }}>OPTIONS</td>
+        <td style={{ padding: "0.5rem" }}>{o.instrumentName}</td>
+        <td style={{ padding: "0.5rem", color: o.optionType === "call" ? "#22c55e" : "#ef4444" }}>
+          {o.optionType?.toUpperCase()}
+        </td>
+        <td style={{ padding: "0.5rem" }}>{o.quantity}</td>
+        <td style={{ padding: "0.5rem" }}>${o.premium?.toFixed(2)}</td>
+        <td style={{ padding: "0.5rem" }}>${o.closePrice?.toFixed(2) || "-"}</td>
+        <td style={{ padding: "0.5rem", color: o.realizedPnl >= 0 ? "#22c55e" : "#ef4444", fontWeight: "bold" }}>
+          {o.realizedPnl !== null ? (o.realizedPnl >= 0 ? "+" : "") + "$" + o.realizedPnl?.toFixed(2) : "-"}
+        </td>
+        <td style={{ padding: "0.5rem", color: "#64748b", fontSize: "0.75rem" }}>
+          {new Date(o.closedAt || o.createdAt).toLocaleDateString()}
+        </td>
+      </tr>
+    );
+  }
+
   let rows = [];
   if (filter === "futures") rows = futuresHistory.map(renderFuturesRow);
   else if (filter === "spot") rows = spotHistory.map(renderSpotRow);
-  else if (filter === "options") rows = []; // placeholder for Phase 3
+  else if (filter === "options") rows = optionsHistory.map(renderOptionsRow);
   else if (filter === "all") {
     rows = [
       ...futuresHistory.map(renderFuturesRow),
       ...spotHistory.map(renderSpotRow),
+      ...optionsHistory.map(renderOptionsRow),
     ];
   }
 
@@ -99,9 +127,6 @@ export default function HistoryPanel() {
               }}
             >
               {f.label}
-              {f.value === "options" && (
-                <span style={{ fontSize: "0.65rem", marginLeft: "0.3rem", color: "#64748b" }}>soon</span>
-              )}
             </button>
           ))}
         </div>
@@ -111,7 +136,7 @@ export default function HistoryPanel() {
         <p style={{ color: "#64748b" }}>Loading...</p>
       ) : rows.length === 0 ? (
         <p style={{ color: "#64748b" }}>
-          {filter === "options" ? "Options trading coming soon." : "No trades yet."}
+          {filter === "options" ?"No trades yet." : "No trades yet."}
         </p>
       ) : (
         <div style={{ overflowX: "auto" }}>
