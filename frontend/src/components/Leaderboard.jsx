@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { api } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 export default function Leaderboard() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
     api.getLeaderboard()
@@ -32,7 +34,14 @@ export default function Leaderboard() {
               key={trader.userId}
               style={{
                 background: trader.rank <= 3 ? "linear-gradient(135deg, #1e293b, #0f172a)" : "#1e293b",
-                border: `1px solid ${trader.rank === 1 ? "#f59e0b" : trader.rank === 2 ? "#94a3b8" : trader.rank === 3 ? "#b45309" : "#334155"}`,
+                border: `1px solid ${
+                  trader.userId?.toString() === user?.id?.toString()
+                    ? "#3b82f6" // highlight current user
+                    : trader.rank === 1 ? "#f59e0b"
+                    : trader.rank === 2 ? "#94a3b8"
+                    : trader.rank === 3 ? "#b45309"
+                    : "#334155"
+                }`,
                 borderRadius: "10px",
                 padding: "1rem 1.25rem",
                 display: "grid",
@@ -46,9 +55,23 @@ export default function Leaderboard() {
                 {trader.rank === 1 ? "🥇" : trader.rank === 2 ? "🥈" : trader.rank === 3 ? "🥉" : `#${trader.rank}`}
               </div>
 
-              {/* Name */}
+              {/* Name + YOU badge */}
               <div>
-                <div style={{ fontWeight: "600", color: "#f8fafc" }}>{trader.name}</div>
+                <div style={{ fontWeight: "600", color: "#f8fafc" }}>
+                  {trader.name}
+                  {trader.userId?.toString() === user?.id?.toString() && (
+                    <span style={{
+                      marginLeft: "0.5rem",
+                      background: "#3b82f6",
+                      color: "white",
+                      fontSize: "0.65rem",
+                      padding: "0.1rem 0.4rem",
+                      borderRadius: "4px"
+                    }}>
+                      YOU
+                    </span>
+                  )}
+                </div>
                 <div style={{ fontSize: "0.75rem", color: "#64748b" }}>@{trader.username}</div>
               </div>
 
