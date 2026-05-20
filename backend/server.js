@@ -9,7 +9,11 @@ const tradeRoutes = require("./routes/trade.routes");
 const futuresRoutes = require("./routes/futures.routes");
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
 app.use(express.json());
 
 const optionsRoutes = require("./routes/options.routes");
