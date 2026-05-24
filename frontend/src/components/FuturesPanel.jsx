@@ -10,7 +10,7 @@ const SYMBOLS = [
   { label: "ADA", value: "ADAUSDT" },
 ];
 
-export default function FuturesPanel({ currentPrice }) {
+export default function FuturesPanel({ currentPrice, onTradeComplete }) {
   const [symbol, setSymbol] = useState("BTCUSDT");
   const [quantity, setQuantity] = useState("");
   const [positions, setPositions] = useState([]);

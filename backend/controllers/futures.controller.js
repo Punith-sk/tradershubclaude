@@ -1,4 +1,5 @@
 const { openPosition, closePosition, getOpenPositions, getPositionHistory, SUPPORTED_SYMBOLS } = require("../services/futuresEngine");
+const Position = require("../models/Position.model");
 
 async function openFuturesPosition(req, res) {
   try {
@@ -56,7 +57,10 @@ async function getFuturesPositions(req, res) {
 async function getFuturesHistory(req, res) {
   try {
     const userId = req.user.id;
-    const history = await getPositionHistory(userId);
+    const history = await Position.find({ userId })
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .lean();
     return res.status(200).json({ status: "success", data: history });
   } catch (err) {
     console.error("getFuturesHistory error:", err);

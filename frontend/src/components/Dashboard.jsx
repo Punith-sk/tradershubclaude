@@ -4,7 +4,6 @@ import { subscribeToBtcPrice } from "../services/priceService";
 import { api } from "../services/api";
 import PriceChart from "./PriceChart";
 import FuturesPanel from "./FuturesPanel";
-import TradeHistory from "./TradeHistory";
 import HistoryPanel from "./HistoryPanel";
 import ShareCard from "./ShareCard";
 
@@ -13,6 +12,9 @@ export default function Dashboard() {
   const [livePrice, setLivePrice] = useState(null);
   const [positions, setPositions] = useState([]);
   const [showShareCard, setShowShareCard] = useState(false);
+
+  // 🔑 new state for history refresh
+  const [historyRefresh, setHistoryRefresh] = useState(0);
 
   async function handleReset() {
     if (!window.confirm("Reset portfolio to $10,000? All trades and positions will be deleted.")) return;
@@ -112,8 +114,13 @@ export default function Dashboard() {
       <PriceChart />
 
       <div className="panels">
-        <FuturesPanel currentPrice={livePrice} />
-        <HistoryPanel />
+        {/* 🔑 FuturesPanel notifies Dashboard when a trade completes */}
+        <FuturesPanel
+          currentPrice={livePrice}
+          onTradeComplete={() => setHistoryRefresh(p => p + 1)}
+        />
+        {/* 🔑 HistoryPanel listens for refreshTrigger */}
+        <HistoryPanel refreshTrigger={historyRefresh} />
       </div>
 
       {showShareCard && <ShareCard onClose={() => setShowShareCard(false)} />}

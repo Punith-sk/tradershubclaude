@@ -1,31 +1,36 @@
 import { useEffect, useState } from "react";
 import { api } from "../services/api";
 
-export default function HistoryPanel() {
+export default function HistoryPanel({ refreshTrigger }) {
   const [filter, setFilter] = useState("futures");
   const [futuresHistory, setFuturesHistory] = useState([]);
   const [spotHistory, setSpotHistory] = useState([]);
   const [optionsHistory, setOptionsHistory] = useState([]);
-  const [loading, setLoading] = useState(false); // ✅ FIX
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-      try {
-        const [futuresRes, spotRes, optionsRes] = await Promise.all([
-          api.getFuturesHistory(),
-          api.getTradeHistory(),
-          api.getOptionsHistory(),
-        ]);
-        if (futuresRes.status === "success") setFuturesHistory(futuresRes.data || []);
-        if (spotRes.status === "success") setSpotHistory(spotRes.data || []);
-        if (optionsRes.status === "success") setOptionsHistory(optionsRes.data || []);
-      } finally {
-        setLoading(false);
-      }
+  // load function
+  async function load() {
+    setLoading(true);
+    try {
+      const [futuresRes, spotRes, optionsRes] = await Promise.all([
+        api.getFuturesHistory(),
+        api.getTradeHistory(),
+        api.getOptionsHistory(),
+      ]);
+      if (futuresRes.status === "success") setFuturesHistory(futuresRes.data || []);
+      if (spotRes.status === "success") setSpotHistory(spotRes.data || []);
+      if (optionsRes.status === "success") setOptionsHistory(optionsRes.data || []);
+    } finally {
+      setLoading(false);
     }
-    load();
-  }, []);
+  }
+
+  // run on mount + whenever refreshTrigger changes
+  useEffect(() => {
+  load();
+  const interval = setInterval(load, 5000); // auto-refresh every 5s
+  return () => clearInterval(interval);
+}, [refreshTrigger]);
 
   const FILTERS = [
     { label: "Futures", value: "futures" },
@@ -34,24 +39,31 @@ export default function HistoryPanel() {
     { label: "All", value: "all" },
   ];
 
-  function renderFuturesRow(p) {
-    return (
-      <tr key={p._id}>
-        <td style={{ padding: "0.5rem", color: "#94a3b8", fontSize: "0.75rem" }}>FUTURES</td>
-        <td style={{ padding: "0.5rem" }}>{p.symbol?.replace("USDT", "")}/USDT</td>
-        <td style={{ padding: "0.5rem", color: p.direction === "LONG" ? "#22c55e" : "#ef4444" }}>{p.direction}</td>
-        <td style={{ padding: "0.5rem" }}>{p.quantity}</td>
-        <td style={{ padding: "0.5rem" }}>${p.entryPrice?.toFixed(2)}</td>
-        <td style={{ padding: "0.5rem" }}>${p.closePrice?.toFixed(2)}</td>
-        <td style={{ padding: "0.5rem", color: p.realizedPnl >= 0 ? "#22c55e" : "#ef4444", fontWeight: "bold" }}>
-          {p.realizedPnl >= 0 ? "+" : ""}${p.realizedPnl?.toFixed(2)}
-        </td>
-        <td style={{ padding: "0.5rem", color: "#64748b", fontSize: "0.75rem" }}>
-          {new Date(p.closedAt).toLocaleDateString()}
-        </td>
-      </tr>
-    );
-  }
+function renderFuturesRow(p) {
+  return (
+    <tr key={p._id}>
+      <td style={{ padding: "0.5rem", color: "#94a3b8", fontSize: "0.75rem" }}>FUTURES</td>
+      <td style={{ padding: "0.5rem" }}>{p.symbol?.replace("USDT", "")}/USDT</td>
+      <td style={{ padding: "0.5rem", color: p.direction === "LONG" ? "#22c55e" : "#ef4444" }}>{p.direction}</td>
+      <td style={{ padding: "0.5rem" }}>{p.quantity}</td>
+      <td style={{ padding: "0.5rem" }}>${p.entryPrice?.toFixed(2)}</td>
+      <td style={{ padding: "0.5rem" }}>
+        {p.status === "OPEN" ? <span style={{ color: "#f59e0b" }}>-</span> : `$${p.closePrice?.toFixed(2)}`}
+      </td>
+      <td style={{ padding: "0.5rem", fontWeight: "bold" }}>
+        {p.status === "OPEN"
+          ? <span style={{ color: "#f59e0b" }}>OPEN</span>
+          : <span style={{ color: p.realizedPnl >= 0 ? "#22c55e" : "#ef4444" }}>
+              {p.realizedPnl >= 0 ? "+" : ""}${p.realizedPnl?.toFixed(2)}
+            </span>
+        }
+      </td>
+      <td style={{ padding: "0.5rem", color: "#64748b", fontSize: "0.75rem" }}>
+        {p.status === "OPEN" ? "Active" : new Date(p.closedAt).toLocaleDateString()}
+      </td>
+    </tr>
+  );
+}
 
   function renderSpotRow(t) {
     return (
@@ -135,9 +147,7 @@ export default function HistoryPanel() {
       {loading ? (
         <p style={{ color: "#64748b" }}>Loading...</p>
       ) : rows.length === 0 ? (
-        <p style={{ color: "#64748b" }}>
-          {filter === "options" ?"No trades yet." : "No trades yet."}
-        </p>
+        <p style={{ color: "#64748b" }}>No trades yet.</p>
       ) : (
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem" }}>
