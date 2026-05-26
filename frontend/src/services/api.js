@@ -22,4 +22,5 @@ export const api = {
   closeOption: (optionId) => fetch(BASE_URL + "/options/close", { method: "POST", headers: authHeaders(), body: JSON.stringify({ optionId }) }).then(r => r.json()),
   getOpenOptions: () => fetch(BASE_URL + "/options/positions", { headers: authHeaders() }).then(r => r.json()),
   getOptionsHistory: () => fetch(BASE_URL + "/options/history", { headers: authHeaders() }).then(r => r.json()),
+  closeAllOptions: () => fetch(BASE_URL + "/options/closeall", { method: "POST", headers: authHeaders() }).then(r => r.json()),
 };

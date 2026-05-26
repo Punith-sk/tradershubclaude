@@ -175,8 +175,10 @@ async function getOpenOptions(req, res) {
 async function getOptionsHistory(req, res) {
   try {
     const userId = req.user.id;
-    const history = await Option.find({ userId, status: { $in: ["CLOSED", "EXPIRED"] } })
-      .sort({ closedAt: -1 }).limit(50).lean();
+    const history = await Option.find({ userId })
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .lean();
     return res.status(200).json({ status: "success", data: history });
   } catch (err) {
     console.error("getOptionsHistory error:", err);
@@ -184,4 +186,54 @@ async function getOptionsHistory(req, res) {
   }
 }
 
-module.exports = { fetchExpiries, fetchChain, buyOption, closeOption, getOpenOptions, getOptionsHistory };
+async function closeAllOptions(req, res) {
+  try {
+    const userId = req.user.id;
+    const openOptions = await Option.find({ userId, status: "OPEN" });
+
+    if (openOptions.length === 0) {
+      return res.status(200).json({ status: "success", message: "No open options to close" });
+    }
+
+    let totalPnl = 0;
+    const btcPriceRes = await fetch("https://www.deribit.com/api/v2/public/get_index_price?index_name=btc_usd");
+    const btcPriceData = await btcPriceRes.json();
+    const btcPrice = btcPriceData.result.index_price;
+    const portfolio = await Portfolio.findOne({ userId });
+
+    for (const option of openOptions) {
+      try {
+        const { getOptionTicker } = require("../services/optionsService");
+        const ticker = await getOptionTicker(option.instrumentName);
+        const closePriceInUsd = +((ticker.best_bid_price || ticker.mark_price) * btcPrice).toFixed(2);
+        const proceeds = +(closePriceInUsd * option.quantity).toFixed(2);
+        const realizedPnl = +(proceeds - option.totalCost).toFixed(2);
+
+        option.status = "CLOSED";
+        option.closePrice = closePriceInUsd;
+        option.realizedPnl = realizedPnl;
+        option.closedAt = new Date();
+        await option.save();
+
+        portfolio.cashBalance += proceeds;
+        portfolio.realizedPnl += realizedPnl;
+        totalPnl += realizedPnl;
+      } catch (err) {
+        console.error(`Error closing option ${option.instrumentName}:`, err);
+      }
+    }
+
+    await portfolio.save();
+
+    return res.status(200).json({
+      status: "success",
+      message: `Closed ${openOptions.length} options | Total PnL: ${totalPnl >= 0 ? "+" : ""}$${totalPnl.toFixed(2)}`,
+      totalPnl,
+    });
+  } catch (err) {
+    console.error("closeAllOptions error:", err);
+    return res.status(500).json({ status: "error", message: "Internal server error" });
+  }
+}
+
+module.exports = { fetchExpiries, fetchChain, buyOption, closeOption, getOpenOptions, getOptionsHistory, closeAllOptions };
