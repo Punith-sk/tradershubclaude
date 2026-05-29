@@ -7,8 +7,26 @@ export default function HistoryPanel({ refreshTrigger }) {
   const [spotHistory, setSpotHistory] = useState([]);
   const [optionsHistory, setOptionsHistory] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [livePrice, setLivePrice] = useState({});
 
-  // load function
+  useEffect(() => {
+    async function fetchPrices() {
+      const symbols = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "ADAUSDT"];
+      const prices = {};
+      for (const sym of symbols) {
+        try {
+          const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${sym}`);
+          const data = await res.json();
+          prices[sym] = parseFloat(data.price);
+        } catch { }
+      }
+      setLivePrice(prices);
+    }
+    fetchPrices();
+    const interval = setInterval(fetchPrices, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   async function load() {
     setLoading(true);
     try {
@@ -25,45 +43,89 @@ export default function HistoryPanel({ refreshTrigger }) {
     }
   }
 
-  // run on mount + whenever refreshTrigger changes
   useEffect(() => {
-  load();
-  const interval = setInterval(load, 5000); // auto-refresh every 5s
-  return () => clearInterval(interval);
-}, [refreshTrigger]);
+    load();
+    const interval = setInterval(load, 5000);
+    return () => clearInterval(interval);
+  }, [refreshTrigger]);
 
   const FILTERS = [
-    { label: "Futures", value: "futures" },
-    { label: "Spot", value: "spot" },
-    { label: "Options", value: "options" },
     { label: "All", value: "all" },
+    { label: "Spot", value: "spot" },
+    { label: "Futures", value: "futures" },
+    { label: "Options", value: "options" },
   ];
 
-function renderFuturesRow(p) {
-  return (
-    <tr key={p._id}>
-      <td style={{ padding: "0.5rem", color: "#94a3b8", fontSize: "0.75rem" }}>FUTURES</td>
-      <td style={{ padding: "0.5rem" }}>{p.symbol?.replace("USDT", "")}/USDT</td>
-      <td style={{ padding: "0.5rem", color: p.direction === "LONG" ? "#22c55e" : "#ef4444" }}>{p.direction}</td>
-      <td style={{ padding: "0.5rem" }}>{p.quantity}</td>
-      <td style={{ padding: "0.5rem" }}>${p.entryPrice?.toFixed(2)}</td>
-      <td style={{ padding: "0.5rem" }}>
-        {p.status === "OPEN" ? <span style={{ color: "#f59e0b" }}>-</span> : `$${p.closePrice?.toFixed(2)}`}
-      </td>
-      <td style={{ padding: "0.5rem", fontWeight: "bold" }}>
-        {p.status === "OPEN"
-          ? <span style={{ color: "#f59e0b" }}>OPEN</span>
-          : <span style={{ color: p.realizedPnl >= 0 ? "#22c55e" : "#ef4444" }}>
-              {p.realizedPnl >= 0 ? "+" : ""}${p.realizedPnl?.toFixed(2)}
-            </span>
-        }
-      </td>
-      <td style={{ padding: "0.5rem", color: "#64748b", fontSize: "0.75rem" }}>
-        {p.status === "OPEN" ? "Active" : new Date(p.closedAt).toLocaleDateString()}
-      </td>
-    </tr>
-  );
-}
+  function formatTime(date) {
+    return new Date(date).toLocaleString("en-IN", {
+      day: "2-digit", month: "short",
+      hour: "2-digit", minute: "2-digit"
+    });
+  }
+
+  function calcHeld(start, end) {
+    const diffMs = new Date(end) - new Date(start);
+    const diffMins = Math.floor(diffMs / 60000);
+    const hours = Math.floor(diffMins / 60);
+    const mins = diffMins % 60;
+    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+  }
+
+  function renderFuturesRow(p) {
+    const currentPrice = livePrice[p.symbol] || p.entryPrice;
+    const livePnl = p.status === "OPEN"
+      ? p.direction === "LONG"
+        ? ((currentPrice - p.entryPrice) * p.quantity * 10).toFixed(2)
+        : ((p.entryPrice - currentPrice) * p.quantity * 10).toFixed(2)
+      : null;
+    const isOpen = p.status === "OPEN";
+
+    const getDuration = () => {
+      const diffMs = new Date() - new Date(p.createdAt);
+      const diffMins = Math.floor(diffMs / 60000);
+      const hours = Math.floor(diffMins / 60);
+      const mins = diffMins % 60;
+      return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+    };
+
+    return (
+      <tr key={p._id} style={{ background: isOpen ? "rgba(245,158,11,0.06)" : "transparent", borderLeft: isOpen ? "3px solid #f59e0b" : "3px solid transparent" }}>
+        <td style={{ padding: "0.5rem", color: "#94a3b8", fontSize: "0.75rem" }}>FUTURES</td>
+        <td style={{ padding: "0.5rem" }}>{p.symbol?.replace("USDT", "")}/USDT</td>
+        <td style={{ padding: "0.5rem", color: p.direction === "LONG" ? "#22c55e" : "#ef4444" }}>{p.direction}</td>
+        <td style={{ padding: "0.5rem" }}>{p.quantity}</td>
+        <td style={{ padding: "0.5rem" }}>${p.entryPrice?.toFixed(2)}</td>
+        <td style={{ padding: "0.5rem" }}>
+          {isOpen
+            ? <span style={{ color: "#f59e0b" }}>${currentPrice?.toFixed(2)}</span>
+            : `$${p.closePrice?.toFixed(2)}`}
+        </td>
+        <td style={{ padding: "0.5rem", fontWeight: "bold" }}>
+          {isOpen
+            ? <span style={{ color: parseFloat(livePnl) >= 0 ? "#22c55e" : "#ef4444" }}>
+                {parseFloat(livePnl) >= 0 ? "+" : ""}${livePnl}
+              </span>
+            : <span style={{ color: p.realizedPnl >= 0 ? "#22c55e" : "#ef4444" }}>
+                {p.realizedPnl >= 0 ? "+" : ""}${p.realizedPnl?.toFixed(2)}
+              </span>
+          }
+        </td>
+        <td style={{ padding: "0.5rem", color: "#64748b", fontSize: "0.72rem" }}>
+          {isOpen
+            ? <span>
+                <div style={{ color: "#f59e0b" }}>Active · {getDuration()}</div>
+                <div>Since {formatTime(p.createdAt)}</div>
+              </span>
+            : <span>
+                <div style={{ color: "#94a3b8" }}>Open: {formatTime(p.createdAt)}</div>
+                <div style={{ color: "#94a3b8" }}>Close: {formatTime(p.closedAt)}</div>
+                <div style={{ color: "#64748b", fontSize: "0.68rem" }}>Held {calcHeld(p.createdAt, p.closedAt)}</div>
+              </span>
+          }
+        </td>
+      </tr>
+    );
+  }
 
   function renderSpotRow(t) {
     return (
@@ -78,28 +140,48 @@ function renderFuturesRow(p) {
           {t.action === "SELL" ? (t.realizedPnl >= 0 ? "+" : "") + "$" + t.realizedPnl?.toFixed(2) : "-"}
         </td>
         <td style={{ padding: "0.5rem", color: "#64748b", fontSize: "0.75rem" }}>
-          {new Date(t.timestamp).toLocaleDateString()}
+          {formatTime(t.timestamp)}
         </td>
       </tr>
     );
   }
 
   function renderOptionsRow(o) {
+    const isOpen = o.status === "OPEN";
     return (
-      <tr key={o._id}>
+      <tr key={o._id} style={{ background: isOpen ? "rgba(245,158,11,0.06)" : "transparent", borderLeft: isOpen ? "3px solid #f59e0b" : "3px solid transparent" }}>
         <td style={{ padding: "0.5rem", color: "#94a3b8", fontSize: "0.75rem" }}>OPTIONS</td>
-        <td style={{ padding: "0.5rem" }}>{o.instrumentName}</td>
+        <td style={{ padding: "0.5rem", fontSize: "0.75rem" }}>{o.instrumentName}</td>
         <td style={{ padding: "0.5rem", color: o.optionType === "call" ? "#22c55e" : "#ef4444" }}>
           {o.optionType?.toUpperCase()}
         </td>
         <td style={{ padding: "0.5rem" }}>{o.quantity}</td>
         <td style={{ padding: "0.5rem" }}>${o.premium?.toFixed(2)}</td>
-        <td style={{ padding: "0.5rem" }}>${o.closePrice?.toFixed(2) || "-"}</td>
-        <td style={{ padding: "0.5rem", color: o.realizedPnl >= 0 ? "#22c55e" : "#ef4444", fontWeight: "bold" }}>
-          {o.realizedPnl !== null ? (o.realizedPnl >= 0 ? "+" : "") + "$" + o.realizedPnl?.toFixed(2) : "-"}
+        <td style={{ padding: "0.5rem" }}>
+          {isOpen
+            ? <span style={{ color: "#f59e0b" }}>OPEN</span>
+            : `$${o.closePrice?.toFixed(2)}`}
+        </td>
+        <td style={{ padding: "0.5rem", fontWeight: "bold" }}>
+          {isOpen
+            ? <span style={{ color: "#f59e0b" }}>Live</span>
+            : <span style={{ color: o.realizedPnl >= 0 ? "#22c55e" : "#ef4444" }}>
+                {o.realizedPnl >= 0 ? "+" : ""}${o.realizedPnl?.toFixed(2)}
+              </span>
+          }
         </td>
         <td style={{ padding: "0.5rem", color: "#64748b", fontSize: "0.75rem" }}>
-          {new Date(o.closedAt || o.createdAt).toLocaleDateString()}
+          {isOpen
+            ? <span>
+                <div style={{ color: "#f59e0b" }}>Active</div>
+                <div>Since {formatTime(o.createdAt)}</div>
+              </span>
+            : <span>
+                <div style={{ color: "#94a3b8" }}>Open: {formatTime(o.createdAt)}</div>
+                <div style={{ color: "#94a3b8" }}>Close: {formatTime(o.closedAt)}</div>
+                <div style={{ color: "#64748b", fontSize: "0.68rem" }}>Held {calcHeld(o.createdAt, o.closedAt)}</div>
+              </span>
+          }
         </td>
       </tr>
     );
@@ -119,7 +201,6 @@ function renderFuturesRow(p) {
 
   return (
     <div style={{ background: "#1e293b", border: "1px solid #334155", borderRadius: "10px", padding: "1.25rem" }}>
-      {/* Header + Filter */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
         <h3 style={{ margin: 0 }}>Trade History</h3>
         <div style={{ display: "flex", gap: "0.3rem" }}>
