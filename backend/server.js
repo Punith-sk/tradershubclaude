@@ -26,6 +26,9 @@ const leaderboardRoutes = require("./routes/leaderboard.routes");
 // and below the other app.use lines:
 app.use("/api", leaderboardRoutes);
 
+const competitionRoutes = require("./routes/competition.routes");
+app.use("/api", competitionRoutes);
+
 app.get("/", (req, res) => res.json({ status: "TradersHub API running" }));
 
 mongoose

@@ -6,12 +6,18 @@ import Leaderboard from "./components/Leaderboard";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import OptionsChain from "./components/OptionsChain";
-
+import LandingPage from "./pages/LandingPage";
+import WeeklyCompetition from "./components/WeeklyCompetition";
 
 function AppContent() {
   const { isLoggedIn, logout } = useAuth();
   const [page, setPage] = useState("login");
   const [activePage, setActivePage] = useState("dashboard");
+  const [showLanding, setShowLanding] = useState(true);
+
+  if (!isLoggedIn && showLanding) {
+    return <LandingPage onGetStarted={() => setShowLanding(false)} />;
+  }
 
   if (!isLoggedIn) {
     return page === "login"
@@ -67,17 +73,53 @@ function AppContent() {
             >
               🏆 Leaderboard
             </button>
-            <button onClick={logout} style={{ background: "#ef4444", color: "white", border: "none", padding: "0.4rem 1rem", borderRadius: "6px", cursor: "pointer" }}>
+            <button
+              onClick={() => setActivePage("competition")}
+              style={{
+                background: activePage === "competition" ? "#f59e0b" : "transparent",
+                color: activePage === "competition" ? "#0f172a" : "#94a3b8",
+                border: "1px solid #334155",
+                padding: "0.3rem 0.9rem",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontWeight: activePage === "competition" ? "bold" : "normal",
+              }}
+            >
+              🏆 Weekly
+            </button>
+            <button
+              onClick={logout}
+              style={{
+                background: "#ef4444",
+                color: "white",
+                border: "none",
+                padding: "0.4rem 1rem",
+                borderRadius: "6px",
+                cursor: "pointer",
+              }}
+            >
               Logout
             </button>
           </div>
         </nav>
-        {activePage === "dashboard" ? <Dashboard /> : activePage === "leaderboard" ? <Leaderboard /> : <OptionsChain />}
+        {activePage === "dashboard" ? (
+          <Dashboard />
+        ) : activePage === "leaderboard" ? (
+          <Leaderboard />
+        ) : activePage === "options" ? (
+          <OptionsChain />
+        ) : (
+          <WeeklyCompetition />
+        )}
       </div>
     </PortfolioProvider>
   );
 }
 
 export default function App() {
-  return <AuthProvider><AppContent /></AuthProvider>;
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
 }

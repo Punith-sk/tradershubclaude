@@ -23,4 +23,6 @@ export const api = {
   getOpenOptions: () => fetch(BASE_URL + "/options/positions", { headers: authHeaders() }).then(r => r.json()),
   getOptionsHistory: () => fetch(BASE_URL + "/options/history", { headers: authHeaders() }).then(r => r.json()),
   closeAllOptions: () => fetch(BASE_URL + "/options/closeall", { method: "POST", headers: authHeaders() }).then(r => r.json()),
+  getWeeklyLeaderboard: () => fetch(BASE_URL + "/competition/weekly", { headers: authHeaders() }).then(r => r.json()),
+  getHallOfFame: () => fetch(BASE_URL + "/competition/halloffame", { headers: authHeaders() }).then(r => r.json()),
 };
