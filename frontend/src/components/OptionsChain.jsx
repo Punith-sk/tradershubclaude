@@ -204,54 +204,67 @@ export default function OptionsChain() {
           </table>
         )}
       </div>
-
-      {/* Open Options Positions */}
-      {openOptions.length > 0 && (
-        <div style={{ background: "#1e293b", border: "1px solid #334155", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>
-          <h3 style={{ marginBottom: "1rem" }}>Open Option Positions ({openOptions.length})</h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-            {openOptions.map(opt => (
-              <div key={opt._id} style={{ background: "#0f172a", borderRadius: "8px", padding: "0.75rem 1rem", display: "grid", gridTemplateColumns: "1fr repeat(5, auto)", gap: "1rem", alignItems: "center" }}>
-                <div>
-                  <div style={{ fontWeight: "600", fontSize: "0.85rem", color: opt.optionType === "call" ? "#22c55e" : "#ef4444" }}>
-                    {opt.instrumentName}
-                  </div>
-                  <div style={{ fontSize: "0.72rem", color: "#64748b" }}>
-                    {opt.optionType.toUpperCase()} | Qty: {opt.quantity} | Entry: ${opt.premium}
-                  </div>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: "0.72rem", color: "#64748b" }}>Current</div>
-                  <div style={{ fontSize: "0.85rem" }}>${opt.currentPrice}</div>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: "0.72rem", color: "#64748b" }}>Unrealized</div>
-                  <div style={{ fontSize: "0.85rem", color: opt.unrealizedPnl >= 0 ? "#22c55e" : "#ef4444", fontWeight: "bold" }}>
-                    {opt.unrealizedPnl >= 0 ? "+" : ""}${opt.unrealizedPnl}
-                  </div>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: "0.72rem", color: "#64748b" }}>P&L%</div>
-                  <div style={{ fontSize: "0.85rem", color: opt.pnlPct >= 0 ? "#22c55e" : "#ef4444" }}>
-                    {opt.pnlPct >= 0 ? "+" : ""}{opt.pnlPct}%
-                  </div>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: "0.72rem", color: "#64748b" }}>Delta</div>
-                  <div style={{ fontSize: "0.85rem" }}>{opt.currentDelta?.toFixed(3)}</div>
-                </div>
-                <button
-                  onClick={() => handleClose(opt._id)}
-                  disabled={closing === opt._id}
-                  style={{ background: "#ef4444", color: "white", border: "none", padding: "0.3rem 0.75rem", borderRadius: "6px", cursor: "pointer", fontSize: "0.8rem" }}
-                >
-                  {closing === opt._id ? "..." : "Close"}
-                </button>
-              </div>
-            ))}
+{/* Open Options Positions */}
+{openOptions.length > 0 && (
+  <div style={{ background: "#1e293b", border: "1px solid #334155", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+      <h3 style={{ margin: 0 }}>Open Option Positions ({openOptions.length})</h3>
+      <button
+        onClick={async () => {
+          const res = await api.closeAllOptions();
+          if (res.status === "success") {
+            setMessage({ type: "success", text: res.message });
+            loadOpenOptions();
+          }
+        }}
+        style={{ background: "#ef4444", color: "white", border: "none", padding: "0.4rem 1rem", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}
+      >
+        Close All
+      </button>
+    </div>
+    <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+      {openOptions.map(opt => (
+        <div key={opt._id} style={{ background: "#0f172a", borderRadius: "8px", padding: "0.75rem 1rem", display: "grid", gridTemplateColumns: "1fr repeat(5, auto)", gap: "1rem", alignItems: "center" }}>
+          <div>
+            <div style={{ fontWeight: "600", fontSize: "0.85rem", color: opt.optionType === "call" ? "#22c55e" : "#ef4444" }}>
+              {opt.instrumentName}
+            </div>
+            <div style={{ fontSize: "0.72rem", color: "#64748b" }}>
+              {opt.optionType.toUpperCase()} | Qty: {opt.quantity} | Entry: ${opt.premium}
+            </div>
           </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: "0.72rem", color: "#64748b" }}>Current</div>
+            <div style={{ fontSize: "0.85rem" }}>${opt.currentPrice}</div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: "0.72rem", color: "#64748b" }}>Unrealized</div>
+            <div style={{ fontSize: "0.85rem", color: opt.unrealizedPnl >= 0 ? "#22c55e" : "#ef4444", fontWeight: "bold" }}>
+              {opt.unrealizedPnl >= 0 ? "+" : ""}${opt.unrealizedPnl}
+            </div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: "0.72rem", color: "#64748b" }}>P&L%</div>
+            <div style={{ fontSize: "0.85rem", color: opt.pnlPct >= 0 ? "#22c55e" : "#ef4444" }}>
+              {opt.pnlPct >= 0 ? "+" : ""}{opt.pnlPct}%
+            </div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: "0.72rem", color: "#64748b" }}>Delta</div>
+            <div style={{ fontSize: "0.85rem" }}>{opt.currentDelta?.toFixed(3)}</div>
+          </div>
+          <button
+            onClick={() => handleClose(opt._id)}
+            disabled={closing === opt._id}
+            style={{ background: "#ef4444", color: "white", border: "none", padding: "0.3rem 0.75rem", borderRadius: "6px", cursor: "pointer", fontSize: "0.8rem" }}
+          >
+            {closing === opt._id ? "..." : "Close"}
+          </button>
         </div>
-      )}
+      ))}
+    </div>
+  </div>
+)}
 
       {/* Buy Modal */}
       {buyModal && (

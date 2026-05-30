@@ -195,7 +195,25 @@ export default function FuturesPanel({ currentPrice, onTradeComplete }) {
       {/* Open Positions */}
       {positions.length > 0 && (
         <div style={{ background: "#1e293b", border: "1px solid #334155", borderRadius: "10px", padding: "1rem" }}>
-          <h3 style={{ marginBottom: "0.75rem" }}>Open Positions ({positions.length})</h3>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+            <h3 style={{ margin: 0 }}>Open Positions ({positions.length})</h3>
+            <button
+              onClick={async () => {
+                if (!window.confirm("Close all open futures positions?")) return;
+                setLoading(true);
+                for (const pos of positions) {
+                  await api.closeFuturesPosition(pos._id);
+                }
+                await loadPositions();
+                setLoading(false);
+                setMessage({ type: "success", text: "All positions closed" });
+              }}
+              disabled={loading}
+              style={{ background: "#ef4444", color: "white", border: "none", padding: "0.3rem 0.9rem", borderRadius: "6px", cursor: "pointer", fontSize: "0.8rem", fontWeight: "bold" }}
+            >
+              Close All
+            </button>
+          </div>
           {positions.map((pos) => (
             <div
               key={pos._id}
