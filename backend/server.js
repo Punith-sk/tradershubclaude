@@ -3,12 +3,16 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 require("dotenv").config();
 
-
 const authRoutes = require("./routes/auth.routes");
 const tradeRoutes = require("./routes/trade.routes");
 const futuresRoutes = require("./routes/futures.routes");
+const optionsRoutes = require("./routes/options.routes");
+const leaderboardRoutes = require("./routes/leaderboard.routes");
+const competitionRoutes = require("./routes/competition.routes");
+const profileRoutes = require("./routes/profile.routes");
 
 const app = express();
+
 app.use(cors({
   origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE"],
@@ -16,18 +20,13 @@ app.use(cors({
 }));
 app.use(express.json());
 
-const optionsRoutes = require("./routes/options.routes");
-app.use("/api", optionsRoutes);
-
 app.use("/api/auth", authRoutes);
 app.use("/api", tradeRoutes);
 app.use("/api", futuresRoutes);
-const leaderboardRoutes = require("./routes/leaderboard.routes");
-// and below the other app.use lines:
+app.use("/api", optionsRoutes);
 app.use("/api", leaderboardRoutes);
-
-const competitionRoutes = require("./routes/competition.routes");
 app.use("/api", competitionRoutes);
+app.use("/api", profileRoutes);
 
 app.get("/", (req, res) => res.json({ status: "TradersHub API running" }));
 

@@ -7,6 +7,10 @@ const UserSchema = new mongoose.Schema(
     username: { type: String, unique: true, sparse: true, trim: true, lowercase: true },
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: true, minlength: 6 },
+    referralCode: { type: String, unique: true, sparse: true },
+    referredBy: { type: String, default: null },
+    referralCount: { type: Number, default: 0 },
+    referralBonusReceived: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

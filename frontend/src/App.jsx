@@ -8,6 +8,7 @@ import RegisterPage from "./pages/RegisterPage";
 import OptionsChain from "./components/OptionsChain";
 import LandingPage from "./pages/LandingPage";
 import WeeklyCompetition from "./components/WeeklyCompetition";
+import ProfilePage from "./components/ProfilePage";
 
 function AppContent() {
   const { isLoggedIn, logout } = useAuth();
@@ -88,6 +89,20 @@ function AppContent() {
               🏆 Weekly
             </button>
             <button
+              onClick={() => setActivePage("profile")}
+              style={{
+                background: activePage === "profile" ? "#f59e0b" : "transparent",
+                color: activePage === "profile" ? "#0f172a" : "#94a3b8",
+                border: "1px solid #334155",
+                padding: "0.3rem 0.9rem",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontWeight: activePage === "profile" ? "bold" : "normal",
+              }}
+            >
+              Profile
+            </button>
+            <button
               onClick={logout}
               style={{
                 background: "#ef4444",
@@ -102,15 +117,12 @@ function AppContent() {
             </button>
           </div>
         </nav>
-        {activePage === "dashboard" ? (
-          <Dashboard />
-        ) : activePage === "leaderboard" ? (
-          <Leaderboard />
-        ) : activePage === "options" ? (
-          <OptionsChain />
-        ) : (
-          <WeeklyCompetition />
-        )}
+        {activePage === "dashboard" ? <Dashboard />
+          : activePage === "leaderboard" ? <Leaderboard />
+          : activePage === "options" ? <OptionsChain />
+          : activePage === "competition" ? <WeeklyCompetition />
+          : activePage === "profile" ? <ProfilePage />
+          : <WeeklyCompetition />}
       </div>
     </PortfolioProvider>
   );
