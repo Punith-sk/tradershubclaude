@@ -103,19 +103,21 @@ export default function PriceChart() {
       ws.onmessage = (event) => {
         const msg = JSON.parse(event.data);
         const k = msg.k;
-        const price = parseFloat(k.c);
-        setCurrentPrice(price);
-
+        const point = {
+          time: Math.floor(k.t / 1000),
+          open: parseFloat(k.o),
+          high: parseFloat(k.h),
+          low: parseFloat(k.l),
+          close: parseFloat(k.c),
+        };
+        setCurrentPrice(parseFloat(k.c));
         try {
-          seriesRef.current.update({
-            time: Math.floor(k.t / 1000),
-            open: parseFloat(k.o), 
-            high: parseFloat(k.h),
-            low: parseFloat(k.l),
-            close: price,
+          seriesRef.current.update(point);
+        } catch {
+          // duplicate timestamp — rebuild data
+          fetchCandles(activeSymbol, activeInterval).then(candles => {
+            seriesRef.current.setData(candles);
           });
-        } catch (e) {
-          // ignore duplicate timestamp errors
         }
       };
 

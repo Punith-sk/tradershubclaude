@@ -61,9 +61,17 @@ nav button { background: #ef4444; color: white; border: none; padding: 0.4rem 1r
   .auth-page { margin: 2rem 1rem; padding: 1.5rem; }
 }
 
-@media (max-width: 480px) {
-  .stats-grid { grid-template-columns: 1fr 1fr; }
+@media (max-width: 768px) {
+  .dashboard { padding: 0.5rem; }
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
   .stat-card { padding: 0.75rem; }
-  .stat-card strong { font-size: 0.95rem; }
+  .stat-card strong { font-size: 1rem; }
+  .panels { grid-template-columns: 1fr; gap: 0.75rem; }
+  .trading-panel { padding: 1rem; }
+  .trade-buttons { grid-template-columns: 1fr 1fr; }
+  .trade-history { padding: 1rem; overflow-x: auto; }
+  .trade-history table { font-size: 0.72rem; min-width: 600px; }
+  .trade-history th, .trade-history td { padding: 0.35rem; }
+  nav { padding: 0.75rem 1rem; }
   nav h1 { font-size: 1rem; }
 }
