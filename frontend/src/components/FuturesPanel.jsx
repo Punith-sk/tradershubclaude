@@ -14,19 +14,15 @@ export default function FuturesPanel({ currentPrice, onTradeComplete }) {
   const [symbol, setSymbol] = useState("BTCUSDT");
   const [quantity, setQuantity] = useState("");
   const [positions, setPositions] = useState([]);
-  const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [symbolPrices, setSymbolPrices] = useState({});
+  const [showSharePopup, setShowSharePopup] = useState(false);
+  const [sharePnl, setSharePnl] = useState(0);
 
   async function loadPositions() {
     const res = await api.getFuturesPositions();
     if (res.status === "success") setPositions(res.data || []);
-  }
-
-  async function loadHistory() {
-    const res = await api.getFuturesHistory();
-    if (res.status === "success") setHistory(res.data || []);
   }
 
   async function fetchSymbolPrice(sym) {
@@ -47,7 +43,6 @@ export default function FuturesPanel({ currentPrice, onTradeComplete }) {
 
   useEffect(() => {
     loadPositions();
-    loadHistory();
     loadAllPrices();
     const interval = setInterval(() => {
       loadPositions();
@@ -80,11 +75,35 @@ export default function FuturesPanel({ currentPrice, onTradeComplete }) {
     if (res.status === "success") {
       setMessage({ type: "success", text: res.message });
       await loadPositions();
-      await loadHistory();
+      if (onTradeComplete) onTradeComplete();
+      if (res.realizedPnl > 0) {
+        setSharePnl(res.realizedPnl);
+        setShowSharePopup(true);
+      }
     } else {
       setMessage({ type: "error", text: res.message });
     }
     setLoading(false);
+  }
+
+  async function handleCloseAll() {
+    if (!window.confirm("Close all open futures positions?")) return;
+    setLoading(true);
+    let totalPnl = 0;
+    for (const pos of positions) {
+      const res = await api.closeFuturesPosition(pos._id);
+      if (res.status === "success" && res.realizedPnl) {
+        totalPnl += res.realizedPnl;
+      }
+    }
+    await loadPositions();
+    if (onTradeComplete) onTradeComplete();
+    setLoading(false);
+    setMessage({ type: "success", text: "All positions closed" });
+    if (totalPnl > 0) {
+      setSharePnl(totalPnl);
+      setShowSharePopup(true);
+    }
   }
 
   const selectedPrice = symbolPrices[symbol] || currentPrice || 0;
@@ -107,7 +126,6 @@ export default function FuturesPanel({ currentPrice, onTradeComplete }) {
           </span>
         </h3>
 
-        {/* Symbol Selector */}
         <div style={{ display: "flex", gap: "0.4rem", marginBottom: "1rem", flexWrap: "wrap" }}>
           {SYMBOLS.map((s) => (
             <button
@@ -164,18 +182,10 @@ export default function FuturesPanel({ currentPrice, onTradeComplete }) {
         )}
 
         <div className="trade-buttons">
-          <button
-            className="buy-btn"
-            onClick={() => handleOpen("LONG")}
-            disabled={loading || hasOpenForSymbol}
-          >
+          <button className="buy-btn" onClick={() => handleOpen("LONG")} disabled={loading || hasOpenForSymbol}>
             {loading ? "..." : "LONG"}
           </button>
-          <button
-            className="sell-btn"
-            onClick={() => handleOpen("SHORT")}
-            disabled={loading || hasOpenForSymbol}
-          >
+          <button className="sell-btn" onClick={() => handleOpen("SHORT")} disabled={loading || hasOpenForSymbol}>
             {loading ? "..." : "SHORT"}
           </button>
         </div>
@@ -198,22 +208,14 @@ export default function FuturesPanel({ currentPrice, onTradeComplete }) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
             <h3 style={{ margin: 0 }}>Open Positions ({positions.length})</h3>
             <button
-              onClick={async () => {
-                if (!window.confirm("Close all open futures positions?")) return;
-                setLoading(true);
-                for (const pos of positions) {
-                  await api.closeFuturesPosition(pos._id);
-                }
-                await loadPositions();
-                setLoading(false);
-                setMessage({ type: "success", text: "All positions closed" });
-              }}
+              onClick={handleCloseAll}
               disabled={loading}
               style={{ background: "#ef4444", color: "white", border: "none", padding: "0.3rem 0.9rem", borderRadius: "6px", cursor: "pointer", fontSize: "0.8rem", fontWeight: "bold" }}
             >
               Close All
             </button>
           </div>
+
           {positions.map((pos) => (
             <div
               key={pos._id}
@@ -254,7 +256,46 @@ export default function FuturesPanel({ currentPrice, onTradeComplete }) {
         </div>
       )}
 
-      
+      {/* Profit Share Popup */}
+      {showSharePopup && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div style={{ background: "#1e293b", border: "1px solid #22c55e", borderRadius: "16px", padding: "2rem", maxWidth: "380px", width: "90%", textAlign: "center" }}>
+            <div style={{ fontSize: "3rem", marginBottom: "0.5rem" }}>🎉</div>
+            <h2 style={{ color: "#22c55e", marginBottom: "0.5rem" }}>+${sharePnl.toFixed(2)} Profit!</h2>
+            <p style={{ color: "#94a3b8", fontSize: "0.9rem", marginBottom: "1.5rem" }}>
+              You just closed a winning trade on TradersHub. Share your win!
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1rem" }}>
+              <button
+                onClick={() => {
+                  const text = `I just made +$${sharePnl.toFixed(2)} on crypto futures trading on TradersHub! 🚀 Practice trading risk-free at tradershub.app`;
+                  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+                  setShowSharePopup(false);
+                }}
+                style={{ background: "#25D366", color: "white", border: "none", padding: "0.75rem", borderRadius: "8px", fontWeight: "bold", cursor: "pointer", fontSize: "0.95rem" }}
+              >
+                📱 Share on WhatsApp
+              </button>
+              <button
+                onClick={() => {
+                  const text = `I just made +$${sharePnl.toFixed(2)} on crypto futures trading! 🚀 Practice trading risk-free on TradersHub`;
+                  window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, "_blank");
+                  setShowSharePopup(false);
+                }}
+                style={{ background: "#1DA1F2", color: "white", border: "none", padding: "0.75rem", borderRadius: "8px", fontWeight: "bold", cursor: "pointer", fontSize: "0.95rem" }}
+              >
+                🐦 Share on Twitter
+              </button>
+            </div>
+            <button
+              onClick={() => setShowSharePopup(false)}
+              style={{ background: "transparent", color: "#64748b", border: "1px solid #334155", padding: "0.5rem 1.5rem", borderRadius: "8px", cursor: "pointer" }}
+            >
+              Maybe later
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
