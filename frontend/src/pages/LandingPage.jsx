@@ -169,19 +169,16 @@ export default function LandingPage({ onGetStarted }) {
       <canvas ref={canvasRef} style={{ position: "fixed", top: 0, left: 0, pointerEvents: "none", zIndex: 0, opacity: 0.6 }} />
 
       {/* NAV */}
-      <nav style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(5,13,26,0.85)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "1rem 2rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+
+      <nav style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(5,13,26,0.85)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "1rem 1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.3rem", color: "#f59e0b" }}>
           TradersHub
         </div>
-        <div style={{ display: "flex", gap: "2rem", alignItems: "center" }}>
-          <a className="nav-link" href="#features">Features</a>
-          <a className="nav-link" href="#how">How it works</a>
-          <button className="glow-btn" style={{ padding: "0.5rem 1.5rem", fontSize: "0.9rem" }} onClick={onGetStarted}>
-            Start Trading Free
-          </button>
-        </div>
+        <button className="glow-btn" style={{ padding: "0.5rem 1.25rem", fontSize: "0.9rem" }} onClick={onGetStarted}>
+          Start Free →
+        </button>
       </nav>
-
+      
       {/* LIVE TICKER */}
       <div className="ticker-wrap">
         <div className="ticker-track">
